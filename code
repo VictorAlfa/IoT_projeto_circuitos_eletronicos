@@ -1,0 +1,55 @@
+#include <LiquidCrystal.h> // Biblioteca para o display LCD
+#include <Wire.h> // Biblioteca para comunicação I2C
+#include <OneWire.h> // Biblioteca para comunicação 1-Wire
+#include <DallasTemperature.h> // Biblioteca para o sensor DS18B20
+
+#define ONE_WIRE_BUS 2 // Pino de comunicação 1-Wire
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+const int fanPin = 3; // Pino de controle do motor do ventilador
+const int emergencyLEDPin = 4; // Pino de controle do LED de emergência
+const int buzzerPin = 5; // Pino de controle da buzina
+
+const float temperatureThresholdFan = 30.0; // Limite de temperatura para ligar o motor do ventilador
+const float temperatureThresholdEmergency = 50.0; // Limite de temperatura para ativar o LED de emergência e a buzina
+
+LiquidCrystal lcd(8, 9, 10, 11, 12, 13); // Pinos para o display LCD
+
+void setup() {
+  lcd.begin(16, 2);
+  lcd.print("Temperatura:");
+
+  pinMode(fanPin, OUTPUT);
+  pinMode(emergencyLEDPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+
+  sensors.begin();
+}
+
+void loop() {
+  sensors.requestTemperatures();
+
+  float temperature = sensors.getTempCByIndex(0);
+
+  lcd.setCursor(0, 1);
+  lcd.print(temperature);
+  lcd.print("C");
+
+  if (temperature >= temperatureThresholdFan) {
+    digitalWrite(fanPin, HIGH); // Liga o motor do ventilador
+  } else {
+    digitalWrite(fanPin, LOW); // Desliga o motor do ventilador
+  }
+
+  if (temperature > temperatureThresholdEmergency) {
+    digitalWrite(emergencyLEDPin, HIGH); // Liga o LED de emergência
+    digitalWrite(buzzerPin, HIGH); // Liga a buzina
+  } else {
+    digitalWrite(emergencyLEDPin, LOW); // Desliga o LED de emergência
+    digitalWrite(buzzerPin, LOW); // Desliga a buzina
+  }
+
+  delay(1000); // Aguarda 1 segundo
+}
